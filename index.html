@@ -1,0 +1,1716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CodeForge Quest - Vocabulary Review Game</title>
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #020617;
+}
+
+body {
+  color: white;
+}
+
+/* GAME CANVAS */
+#gameCanvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  display: block;
+  background: #020617;
+  z-index: 1;
+}
+
+/* HUD */
+#hud {
+  position: fixed;
+  top: 14px;
+  left: 14px;
+  z-index: 900;
+  display: grid;
+  gap: 8px;
+  min-width: 180px;
+  pointer-events: none;
+}
+
+.hud-row {
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 8px 12px;
+  backdrop-filter: blur(8px);
+  font-size: 15px;
+}
+
+.hud-topbar {
+  display: flex;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.menu-btn {
+  border: none;
+  border-radius: 12px;
+  padding: 8px 12px;
+  background: #0ea5e9;
+  color: white;
+  cursor: pointer;
+  transition: .2s;
+  font-size: 14px;
+}
+.menu-btn:hover {
+  transform: translateY(-2px);
+  background: #38bdf8;
+}
+
+#musicBtn {
+  transition: background 0.3s ease;
+}
+
+.progress-bar {
+  width: 180px;
+  height: 12px;
+  background: rgba(255,255,255,.15);
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.12);
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #06b6d4, #3b82f6);
+  transition: .25s;
+}
+
+/* TITLE SCREEN */
+#titleScreen {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at center, #0f172a, #020617, #000);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 5000;
+  overflow: hidden;
+}
+
+#titleScreen::before {
+  content: "";
+  position: absolute;
+  width: 220%;
+  height: 220%;
+  background: radial-gradient(circle, rgba(56,189,248,.22), transparent 55%);
+  animation: pulse 4s ease-in-out infinite;
+}
+
+#titleScreen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(59,130,246,.16), transparent 18%),
+    radial-gradient(circle at 80% 25%, rgba(56,189,248,.12), transparent 22%),
+    radial-gradient(circle at 50% 70%, rgba(14,165,233,.10), transparent 26%);
+  animation: drift 8s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+  0% { transform: scale(.92); opacity: .35; }
+  50% { transform: scale(1.08); opacity: .85; }
+  100% { transform: scale(.92); opacity: .35; }
+}
+
+@keyframes drift {
+  from { transform: translateY(-8px); }
+  to { transform: translateY(8px); }
+}
+
+.titleBox {
+  text-align: center;
+  z-index: 2;
+  max-width: 900px;
+  padding: 30px;
+  animation: fadeIn 1s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.title-line {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  white-space: nowrap;
+  flex-wrap: nowrap;
+  font-size: clamp(3rem, 6vw, 5rem);
+  color: #38bdf8;
+  text-shadow: 0 0 30px rgba(56,189,248,.8);
+  margin-bottom: 20px;
+}
+
+.title-line .bolt {
+  flex: 0 0 auto;
+}
+
+#startButton {
+  margin-top: 35px;
+  padding: 18px 40px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #0ea5e9, #38bdf8);
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  box-shadow: 0 0 25px rgba(14,165,233,.6);
+  transition: .25s;
+}
+
+#startButton:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 40px rgba(56,189,248,.9);
+}
+
+#startButton:active {
+  transform: scale(.94);
+}
+
+#titleLink {
+  color: #38bdf8;
+  text-decoration: none;
+}
+
+#titleLink:hover {
+  text-decoration: underline;
+}
+
+/* HOME SCREEN */
+#homeScreen {
+  position: fixed;
+  inset: 0;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 4800;
+  background: radial-gradient(circle at center, rgba(15,23,42,.92), rgba(2,6,23,.98));
+  overflow: hidden;
+}
+
+#homeScreen::before {
+  content: "";
+  position: absolute;
+  width: 220%;
+  height: 220%;
+  background: radial-gradient(circle, rgba(34,211,238,.16), transparent 55%);
+  animation: pulse 4s ease-in-out infinite;
+}
+
+.homeCard {
+  position: relative;
+  z-index: 2;
+  width: min(920px, calc(100vw - 24px));
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 24px;
+  padding: 26px;
+  text-align: center;
+  box-shadow: 0 0 30px rgba(0,0,0,.35);
+}
+
+.levelGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.levelBtn {
+  padding: 14px 16px;
+  border: none;
+  border-radius: 16px;
+  background: #1e40af;
+  color: white;
+  cursor: pointer;
+  transition: .2s;
+  font-size: 1rem;
+}
+
+.levelBtn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  background: #2563eb;
+}
+
+.levelBtn:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.homeLink {
+  display: inline-block;
+  margin-top: 18px;
+  color: #38bdf8;
+  text-decoration: none;
+}
+
+/* MODAL */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.9);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  padding: 30px;
+  z-index: 9999;
+}
+
+.modal-content {
+  width: 100%;
+  max-width: 900px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #0f172a;
+  border-radius: 20px;
+  padding: 35px;
+  border: 1px solid rgba(255,255,255,.15);
+}
+
+.modal-content h2 {
+  margin-bottom: 20px;
+  color: #38bdf8;
+}
+
+.close-btn {
+  float: right;
+  background: #dc2626;
+  border: none;
+  color: white;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+/* QUESTION BOX */
+#challengeBox {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  width: min(720px, calc(100vw - 24px));
+  background: rgba(15,23,42,.96);
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 18px;
+  padding: 18px;
+  z-index: 1000;
+  display: none;
+  box-shadow: 0 0 30px rgba(0,0,0,.35);
+  backdrop-filter: blur(8px);
+}
+
+.question {
+  font-size: 1.2rem;
+  line-height: 1.5;
+  margin-bottom: 14px;
+  text-align: center;
+}
+
+.answers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.answer-btn {
+  padding: 14px 16px;
+  border: none;
+  border-radius: 14px;
+  background: #1e40af;
+  color: white;
+  cursor: pointer;
+  transition: .2s;
+  font-size: 1rem;
+}
+
+.answer-btn:hover {
+  transform: translateY(-2px);
+  background: #2563eb;
+}
+
+/* LEVEL COMPLETE SCREEN */
+#levelCompleteScreen {
+  position: fixed;
+  inset: 0;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 4500;
+  background: rgba(2,6,23,.65);
+}
+
+#levelCompleteCard {
+  background: #0f172a;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 22px;
+  padding: 30px;
+  max-width: 560px;
+  width: calc(100vw - 24px);
+  text-align: center;
+  box-shadow: 0 0 30px rgba(0,0,0,.4);
+}
+
+.restart-btn {
+  margin-top: 20px;
+  padding: 15px 28px;
+  border: none;
+  border-radius: 999px;
+  background: #0ea5e9;
+  color: white;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.secondary-btn {
+  margin-top: 14px;
+  padding: 13px 24px;
+  border: none;
+  border-radius: 999px;
+  background: #334155;
+  color: white;
+  cursor: pointer;
+  font-size: 1rem;
+  margin-left: 8px;
+}
+
+/* RESULT SCREEN */
+#resultScreen {
+  position: fixed;
+  inset: 0;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 4600;
+  background: rgba(2,6,23,.72);
+}
+
+#resultCard {
+  background: #0f172a;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 22px;
+  padding: 30px;
+  max-width: 560px;
+  width: calc(100vw - 24px);
+  text-align: center;
+  box-shadow: 0 0 30px rgba(0,0,0,.4);
+}
+
+/* DEATH SCREEN */
+#deathScreen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4400;
+  pointer-events: none;
+  opacity: 0;
+  background: rgba(127, 29, 29, 0);
+  color: #fecaca;
+  font-size: clamp(2.5rem, 6vw, 5rem);
+  font-weight: 700;
+  text-shadow: 0 0 24px rgba(255,255,255,.4);
+  transition: opacity .2s ease, background .2s ease, transform .2s ease;
+}
+</style>
+</head>
+
+<body>
+<canvas id="gameCanvas"></canvas>
+
+<audio id="bgMusic" loop preload="auto">
+  <source src="__Citrus Clamp Dance__.mp3" type="audio/mpeg">
+  Your browser does not support the audio element.
+</audio>
+
+<div id="hud">
+  <div class="hud-topbar">
+    <button class="menu-btn" onclick="showHomeScreen()">Home</button>
+    <button class="menu-btn" id="musicBtn" onclick="toggleMusic()">🔊 Music</button>
+  </div>
+  <div class="hud-row">Level: <span id="level">1</span></div>
+  <div class="hud-row">Score: <span id="score">0</span></div>
+  <div class="hud-row">Correct: <span id="correct">0</span></div>
+  <div class="hud-row">Energy: <span id="energy">100</span></div>
+  <div class="progress-bar">
+    <div id="progressFill" class="progress-fill"></div>
+  </div>
+</div>
+
+<div id="titleScreen">
+  <div class="titleBox">
+    <h1 class="title-line">
+      <span class="bolt">⚡</span>
+      <span>CodeForge Quest</span>
+      <span class="bolt">⚡</span>
+    </h1>
+
+    <p style="margin-top:10px;color:#cbd5e1;font-size:1rem;">
+      Created by Easton Ables
+    </p>
+
+    <div style="margin-top:30px;background:rgba(255,255,255,.08);padding:25px;border-radius:20px;line-height:1.8;border:1px solid rgba(255,255,255,.12);">
+      <h2 style="margin-bottom:12px;">How to Play</h2>
+      <p>Arrow keys move</p>
+      <p>Space / Up jumps</p>
+      <p>Reach the end portal to win</p>
+    </div>
+
+    <button id="startButton" type="button" onclick="startGame()">Start Mission</button>
+
+    <p style="margin-top:18px;">
+      <a href="#" id="titleLink" onclick="openModal(); return false;">Read How I Built This</a>
+    </p>
+  </div>
+</div>
+
+<div id="homeScreen">
+  <div class="homeCard">
+    <h2 style="font-size:2.2rem;color:#38bdf8;margin-bottom:10px;">Home Base</h2>
+    <p style="color:#cbd5e1;line-height:1.7;">
+      Start a new run or replay any unlocked level.
+    </p>
+
+    <button class="restart-btn" onclick="startNewGame()">Start New Game</button>
+
+    <div id="levelGrid" class="levelGrid"></div>
+
+    <p style="margin-top:18px;">
+      <a href="#" class="homeLink" id="homeHowLink" onclick="openModal(); return false;">Read How I Built This</a>
+    </p>
+  </div>
+</div>
+
+<div id="challengeBox">
+  <div class="question" id="question"></div>
+  <div class="answers" id="answers"></div>
+</div>
+
+<div id="levelCompleteScreen">
+  <div id="levelCompleteCard">
+    <h2 id="levelCompleteTitle" style="color:#38bdf8;font-size:2.2rem;margin-bottom:12px;">Level Complete!</h2>
+    <p id="levelCompleteText" style="font-size:1.1rem;line-height:1.7;"></p>
+    <button class="restart-btn" id="continueBtn">Continue</button>
+    <button class="secondary-btn" onclick="showHomeScreen()">Home</button>
+  </div>
+</div>
+
+<div id="resultScreen">
+  <div id="resultCard">
+    <h2 style="color:#38bdf8;font-size:2.2rem;margin-bottom:12px;">Mission Complete!</h2>
+    <p id="finalText" style="font-size:1.1rem;line-height:1.7;"></p>
+    <button class="restart-btn" onclick="startNewGame()">Replay From Level 1</button>
+    <button class="secondary-btn" onclick="showHomeScreen()">Home</button>
+  </div>
+</div>
+
+<div id="deathScreen">YOU DIED</div>
+
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <button class="close-btn" onclick="closeModal()">Close</button>
+    <h2>How This Game Was Built</h2>
+    <p>This game was built as a single-file HTML project using HTML, CSS, and JavaScript.</p>
+    <br>
+    <h3>Features Included</h3>
+    <ul>
+      <li>Vocabulary question randomization</li>
+      <li>Dynamic scoring system</li>
+      <li>Visual feedback for right and wrong answers</li>
+      <li>Win condition system</li>
+      <li>Modal information panel</li>
+      <li>Animated background stars</li>
+      <li>Level select home screen</li>
+      <li>Respawn challenge system</li>
+      <li>Portal and death animations</li>
+    </ul>
+    <br>
+    <h3>Programming Concepts Used</h3>
+    <ul>
+      <li>Arrays to store vocabulary</li>
+      <li>Objects to organize data</li>
+      <li>Functions to manage gameplay</li>
+      <li>Event listeners for interaction</li>
+      <li>Canvas drawing for graphics</li>
+      <li>Conditional statements to check answers</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+function openModal() {
+  document.getElementById('modal').style.display = 'flex';
+}
+function closeModal() {
+  document.getElementById('modal').style.display = 'none';
+}
+
+let started = false;
+let keys = {};
+let score = 0;
+let correctAnswers = 0;
+let cameraX = 0;
+let challengeMode = false;
+let gameWon = false;
+let currentLevel = 1;
+
+let respawnChallengeMode = false;
+let respawnChallengesLeft = 0;
+let deathAnimating = false;
+let frameCount = 0;
+let levelTransition = false;
+let winAnimationFrame = 0;
+let currentQuestion = null;
+let respawnPoint = { x: 50, y: 350 };
+
+const player = {
+  x: 50,
+  y: 350,
+  w: 28,
+  h: 28,
+  dx: 0,
+  dy: 0,
+  speed: 4,
+  jump: -11,
+  grounded: false,
+  energy: 100
+};
+
+const gravity = 0.55;
+
+const vocab = [
+  {term:"Algorithm", definition:"A step-by-step set of instructions for solving a problem."},
+  {term:"Value", definition:"A specific piece of data a program stores or uses."},
+  {term:"Data Type", definition:"The category of data a value belongs to."},
+  {term:"Number", definition:"A numeric data type used for math calculations."},
+  {term:"String", definition:"A sequence of characters used to represent text."},
+  {term:"Boolean", definition:"A data type with only two possible values: true or false."},
+  {term:"Variable", definition:"A named container in memory that stores a value that can change."},
+  {term:"Assignment Operator", definition:"The = symbol that stores a value into a variable."},
+  {term:"List", definition:"An ordered collection of values stored under a single variable name."},
+  {term:"Element", definition:"A single value stored inside a list."},
+  {term:"Index", definition:"The position number used to access an element in a list, starting at 0."},
+  {term:"Expression", definition:"A combination of values and operators that produces a single result."},
+  {term:"Arithmetic Operators", definition:"Symbols that perform math on numbers."},
+  {term:"% (Modulus)", definition:"Returns the remainder left over after division."},
+  {term:"Comparison Operators", definition:"Symbols that compare two values and return true or false."},
+  {term:"Logical Operators", definition:"Symbols that combine or modify boolean values."},
+  {term:"Concatenation", definition:"Joining two or more strings together into one."},
+  {term:"Condition", definition:"A true or false question that controls what code runs."},
+  {term:"Conditional Statement", definition:"Code that runs different instructions depending on whether a condition is true."},
+  {term:"Counter Pattern", definition:"Updating a variable by adding to its own current value to count something."},
+  {term:"Function", definition:"A named, reusable block of code that performs a specific task."},
+  {term:"Function Call", definition:"A command that executes a function."},
+  {term:"Event", definition:"An action that triggers code to run."},
+  {term:"Event Handler", definition:"Code that waits for a specific event and runs when it occurs."},
+  {term:"Action", definition:"What the program does in response to an event."},
+  {term:"Comment", definition:"A note written in code that the program ignores, meant for humans to read."},
+  {term:"Debugging", definition:"The process of finding and fixing errors in code."},
+  {term:"Loop", definition:"Code that repeats."},
+  {term:"Array", definition:"A collection of values stored together."},
+  {term:"Object", definition:"A structure that stores related data using keys and values."},
+  {term:"Parameter", definition:"A value passed into a function."},
+  {term:"Return", definition:"A value sent back from a function."},
+  {term:"Class", definition:"A blueprint used to create objects."},
+  {term:"HTML", definition:"The language used to structure web pages."},
+  {term:"CSS", definition:"The language used to style web pages."},
+  {term:"DOM", definition:"The page structure JavaScript can change."},
+  {term:"API", definition:"A way for programs to communicate."},
+  {term:"Sprite", definition:"A small graphic used in a game."},
+  {term:"Hitbox", definition:"The area used for collision detection."},
+  {term:"Collision", definition:"When two game objects touch."},
+  {term:"Bug", definition:"An error in a program."},
+  {term:"Syntax", definition:"The rules for writing code correctly."},
+  {term:"Iteration", definition:"Repeating a process multiple times."},
+  {term:"Variable Scope", definition:"Where a variable can be accessed."},
+  {term:"Import", definition:"Bringing code or data into a file."},
+  {term:"Export", definition:"Sending code or data out of a file."},
+  {term:"Event Listener", definition:"Code that waits for a specific event."},
+  {term:"Debug", definition:"To find and fix problems in code."},
+  {term:"Loop Counter", definition:"A variable that tracks how many times a loop runs."}
+];
+
+const levelData = {
+  1: {
+    start: {x:50, y:350},
+    platforms: [
+      {x:0,y:450,w:300,h:50},
+      {x:130,y:400,w:90,h:20},
+      {x:250,y:360,w:110,h:20},
+      {x:390,y:320,w:110,h:20},
+      {x:530,y:280,w:110,h:20},
+      {x:700,y:390,w:160,h:20},
+      {x:920,y:330,w:150,h:20},
+      {x:1140,y:260,w:170,h:20},
+      {x:1360,y:210,w:210,h:20},
+      {x:1640,y:220,w:190,h:20},
+      {x:1910,y:180,w:220,h:20},
+      {x:2240,y:120,w:230,h:20}
+    ],
+    spikes: [
+      {x:205,y:450,w:34,h:28},
+      {x:440,y:390,w:34,h:28},
+      {x:770,y:390,w:34,h:28},
+      {x:1010,y:330,w:34,h:28},
+      {x:1470,y:210,w:34,h:28}
+    ],
+    zones: [
+      {x:650, triggered:false, solved:false, respawn:{x:530, y:252}},
+      {x:1250, triggered:false, solved:false, respawn:{x:1140, y:232}},
+      {x:1850, triggered:false, solved:false, respawn:{x:1640, y:192}},
+      {x:2350, triggered:false, solved:false, respawn:{x:2240, y:92}}
+    ],
+    goal: {x:2490,y:50,w:55,h:70}
+  },
+  2: {
+    start: {x:50, y:350},
+    platforms: [
+      {x:0,y:450,w:300,h:50},
+      {x:420,y:390,w:260,h:20},
+      {x:820,y:330,w:260,h:20},
+      {x:1180,y:280,w:260,h:20},
+      {x:1550,y:230,w:300,h:20},
+      {x:1950,y:180,w:260,h:20}
+    ],
+    spikes: [
+      {x:470,y:390,w:34,h:28},
+      {x:595,y:390,w:34,h:28},
+      {x:870,y:330,w:34,h:28},
+      {x:1035,y:330,w:34,h:28},
+      {x:1285,y:280,w:34,h:28},
+      {x:1650,y:230,w:34,h:28},
+      {x:2040,y:180,w:34,h:28}
+    ],
+    zones: [
+      {x:700, triggered:false, solved:false, respawn:{x:420, y:362}},
+      {x:1280, triggered:false, solved:false, respawn:{x:1180, y:252}},
+      {x:1820, triggered:false, solved:false, respawn:{x:1550, y:202}},
+      {x:2400, triggered:false, solved:false, respawn:{x:1950, y:152}}
+    ],
+    goal: {x:2240,y:120,w:55,h:70}
+  },
+  3: {
+    start: {x:50, y:350},
+    platforms: [
+      {x:0,y:450,w:220,h:50},
+      {x:290,y:410,w:100,h:20},
+      {x:470,y:340,w:100,h:20},
+      {x:650,y:270,w:100,h:20},
+      {x:880,y:340,w:140,h:20,movingY:true,baseY:340,amp:32,speed:0.03},
+      {x:1100,y:250,w:140,h:20},
+      {x:1360,y:190,w:180,h:20},
+      {x:1650,y:260,w:180,h:20},
+      {x:1930,y:180,w:190,h:20},
+      {x:2220,y:120,w:250,h:20},
+      {x:2520,y:200,w:180,h:20},
+      {x:2820,y:140,w:220,h:20},
+      {x:3180,y:100,w:220,h:20},
+      {x:3550,y:170,w:230,h:20},
+      {x:3940,y:120,w:250,h:20}
+    ],
+    spikes: [
+      {x:150,y:450,w:34,h:28},
+      {x:360,y:410,w:34,h:28},
+      {x:540,y:340,w:34,h:28},
+      {x:720,y:270,w:34,h:28},
+      {x:980,y:340,w:34,h:28,platformIndex:4},
+      {x:1200,y:250,w:34,h:28},
+      {x:1490,y:190,w:34,h:28},
+      {x:2020,y:180,w:34,h:28},
+      {x:2730,y:140,w:34,h:28}
+    ],
+    zones: [
+      {x:750, triggered:false, solved:false, respawn:{x:650, y:242}},
+      {x:1450, triggered:false, solved:false, respawn:{x:1360, y:162}},
+      {x:2100, triggered:false, solved:false, respawn:{x:1930, y:152}},
+      {x:2700, triggered:false, solved:false, respawn:{x:2520, y:172}},
+      {x:3350, triggered:false, solved:false, respawn:{x:3180, y:72}},
+      {x:3900, triggered:false, solved:false, respawn:{x:3940, y:92}}
+    ],
+    goal: {x:4320,y:60,w:55,h:70}
+  },
+  4: {
+    start: {x:50, y:350},
+    platforms: [
+      {x:0,y:450,w:240,h:50},
+      {x:320,y:380,w:120,h:20},
+      {x:520,y:300,w:120,h:20},
+      {x:740,y:220,w:120,h:20},
+      {x:980,y:320,w:150,h:20,movingY:true,baseY:320,amp:34,speed:0.025},
+      {x:1280,y:240,w:160,h:20},
+      {x:1600,y:160,w:180,h:20},
+      {x:1950,y:260,w:180,h:20},
+      {x:2300,y:190,w:180,h:20},
+      {x:2650,y:120,w:200,h:20},
+      {x:3000,y:180,w:200,h:20},
+      {x:3350,y:110,w:220,h:20},
+      {x:3700,y:160,w:220,h:20},
+      {x:4100,y:90,w:260,h:20},
+      {x:4500,y:140,w:260,h:20}
+    ],
+    spikes: [
+      {x:170,y:450,w:34,h:28},
+      {x:400,y:380,w:34,h:28},
+      {x:610,y:300,w:34,h:28},
+      {x:820,y:220,w:34,h:28},
+      {x:1120,y:320,w:34,h:28,platformIndex:4},
+      {x:1380,y:240,w:34,h:28},
+      {x:1730,y:160,w:34,h:28},
+      {x:2080,y:260,w:34,h:28},
+      {x:2460,y:190,w:34,h:28},
+      {x:3160,y:180,w:34,h:28}
+    ],
+    zones: [
+      {x:900, triggered:false, solved:false, respawn:{x:740, y:192}},
+      {x:1700, triggered:false, solved:false, respawn:{x:1600, y:132}},
+      {x:2400, triggered:false, solved:false, respawn:{x:2300, y:162}},
+      {x:3100, triggered:false, solved:false, respawn:{x:3000, y:152}},
+      {x:3800, triggered:false, solved:false, respawn:{x:3700, y:132}},
+      {x:4400, triggered:false, solved:false, respawn:{x:4100, y:62}},
+      {x:4700, triggered:false, solved:false, respawn:{x:4500, y:112}}
+    ],
+    goal: {x:4900,y:60,w:55,h:70}
+  }
+};
+
+let currentPlatforms = [];
+let currentSpikes = [];
+let currentZones = [];
+let currentGoal = {x:0,y:0,w:0,h:0};
+
+let bgStars = [];
+let bgComets = [];
+let deathParticles = [];
+let portalParticles = [];
+
+function initStars() {
+  bgStars = [];
+  bgComets = [];
+
+  for (let i = 0; i < 180; i++) {
+    bgStars.push({
+      x: Math.random() * (canvas.width * 3),
+      y: Math.random() * canvas.height,
+      size: Math.random() * 1.8 + 0.6,
+      baseOpacity: Math.random() * 0.55 + 0.18,
+      twinkleSpeed: Math.random() * 0.02 + 0.008,
+      phase: Math.random() * Math.PI * 2
+    });
+  }
+
+  for (let i = 0; i < 7; i++) {
+    bgComets.push({
+      x: Math.random() * (canvas.width * 2.5),
+      y: Math.random() * canvas.height * 0.7,
+      vx: Math.random() * 3.5 + 2,
+      vy: Math.random() * 1.8 + 0.8,
+      size: Math.random() * 2 + 1.5,
+      trail: Math.floor(Math.random() * 16) + 12
+    });
+  }
+}
+initStars();
+
+window.addEventListener('resize', () => {
+  resizeCanvas();
+  initStars();
+});
+
+let audioCtx;
+function ensureAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+}
+function playSound(freq, duration, type='sine') {
+  try {
+    ensureAudio();
+    const oscillator = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    oscillator.type = type;
+    oscillator.frequency.value = freq;
+
+    oscillator.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+
+    oscillator.start();
+    oscillator.stop(audioCtx.currentTime + duration);
+  } catch (_) {}
+}
+
+// Background Music Functions
+let bgMusicEnabled = false;
+const bgMusic = document.getElementById('bgMusic');
+const musicBtn = document.getElementById('musicBtn');
+
+function toggleMusic() {
+  if (bgMusicEnabled) {
+    bgMusic.pause();
+    bgMusicEnabled = false;
+    musicBtn.textContent = '🔇 Music';
+    musicBtn.style.background = '#dc2626';
+  } else {
+    // Try to play music (will work after user interaction)
+    bgMusic.volume = 0.3; // Set volume to 30%
+    bgMusic.play().then(() => {
+      bgMusicEnabled = true;
+      musicBtn.textContent = '🔊 Music';
+      musicBtn.style.background = '#0ea5e9';
+    }).catch(e => {
+      console.log('Music play failed, user interaction required:', e);
+      // Show message that user needs to interact first
+      alert('Click anywhere on the page first to enable music!');
+    });
+  }
+}
+
+// Enable music on first user interaction
+function enableMusicOnInteraction() {
+  document.removeEventListener('click', enableMusicOnInteraction);
+  document.removeEventListener('keydown', enableMusicOnInteraction);
+
+  if (!bgMusicEnabled) {
+    bgMusic.volume = 0.3;
+    bgMusic.play().catch(e => console.log('Auto music play failed:', e));
+  }
+}
+
+document.addEventListener('click', enableMusicOnInteraction);
+document.addEventListener('keydown', enableMusicOnInteraction);
+
+// Pause music when game is not active
+function handleVisibilityChange() {
+  if (document.hidden && bgMusicEnabled) {
+    bgMusic.pause();
+  } else if (!document.hidden && bgMusicEnabled) {
+    bgMusic.play().catch(e => console.log('Resume music failed:', e));
+  }
+}
+
+document.addEventListener('visibilitychange', handleVisibilityChange);
+
+function syncHUD() {
+  document.getElementById('score').textContent = score;
+  document.getElementById('correct').textContent = correctAnswers;
+  document.getElementById('energy').textContent = Math.floor(player.energy);
+  document.getElementById('level').textContent = currentLevel;
+  document.getElementById('progressFill').style.width = Math.min((correctAnswers / 10) * 100, 100) + '%';
+}
+
+function renderHomeMenu() {
+  const grid = document.getElementById('levelGrid');
+  grid.innerHTML = '';
+
+  for (let i = 1; i <= 4; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'levelBtn';
+    btn.textContent = `Level ${i}`;
+    btn.disabled = !unlockedLevels.includes(i);
+    btn.onclick = () => loadLevel(i, true);
+    grid.appendChild(btn);
+  }
+}
+
+let unlockedLevels = [1];
+
+function loadSavedProgress() {
+  try {
+    const saved = localStorage.getItem('cq_unlockedLevels');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length) {
+        unlockedLevels = [...new Set(parsed.filter(n => Number.isInteger(n) && n >= 1 && n <= 4))].sort((a,b) => a-b);
+      }
+    }
+  } catch (_) {}
+}
+
+function saveProgress() {
+  try {
+    localStorage.setItem('cq_unlockedLevels', JSON.stringify(unlockedLevels));
+  } catch (_) {}
+}
+
+function unlockLevel(n) {
+  if (!unlockedLevels.includes(n) && n >= 1 && n <= 4) {
+    unlockedLevels.push(n);
+    unlockedLevels.sort((a,b) => a-b);
+    saveProgress();
+    renderHomeMenu();
+  }
+}
+
+function showHomeScreen() {
+  started = false;
+  challengeMode = false;
+  respawnChallengeMode = false;
+  levelTransition = false;
+  deathAnimating = false;
+  gameWon = false;
+  document.getElementById('challengeBox').style.display = 'none';
+  document.getElementById('levelCompleteScreen').style.display = 'none';
+  document.getElementById('resultScreen').style.display = 'none';
+  document.getElementById('deathScreen').style.opacity = '0';
+  document.getElementById('homeScreen').style.display = 'flex';
+  renderHomeMenu();
+}
+
+function startNewGame() {
+  score = 0;
+  correctAnswers = 0;
+  player.energy = 100;
+  syncHUD();
+  loadLevel(1, true);
+}
+
+function startGame() {
+  if (started) return;
+  const titleScreen = document.getElementById('titleScreen');
+  titleScreen.style.transition = '1s cubic-bezier(.17,.67,.2,1)';
+  titleScreen.style.transform = 'scale(1.08) translateY(-120%)';
+  titleScreen.style.opacity = '0';
+  titleScreen.style.filter = 'blur(8px)';
+  setTimeout(() => {
+    titleScreen.style.display = 'none';
+    showHomeScreen();
+  }, 1000);
+  playSound(440, .2, 'triangle');
+  setTimeout(() => playSound(660, .2, 'triangle'), 150);
+}
+
+window.addEventListener('keydown', e => {
+  keys[e.key] = true;
+  if (e.key === 'Enter' && document.getElementById('titleScreen').style.display !== 'none') {
+    startGame();
+  }
+  if (e.key === 'Escape') {
+    showHomeScreen();
+  }
+  if (e.key === 'ArrowUp' && player.grounded && !challengeMode && started && !levelTransition && !deathAnimating) {
+    playSound(220, .08, 'square');
+  }
+});
+window.addEventListener('keyup', e => {
+  keys[e.key] = false;
+});
+
+function loadLevel(levelNumber, resetStats = false) {
+  currentLevel = levelNumber;
+  const level = levelData[levelNumber];
+
+  currentPlatforms = level.platforms.map(p => ({...p}));
+  currentSpikes = level.spikes.map(s => ({...s}));
+  currentZones = level.zones.map(z => ({...z, triggered:false, solved:false}));
+  currentGoal = {...level.goal};
+
+  player.x = level.start.x;
+  player.y = level.start.y;
+  player.dx = 0;
+  player.dy = 0;
+  player.energy = 100;
+  cameraX = 0;
+
+  respawnPoint = { x: level.start.x, y: level.start.y };
+
+  started = true;
+  challengeMode = false;
+  respawnChallengeMode = false;
+  deathAnimating = false;
+  levelTransition = false;
+  gameWon = false;
+
+  document.getElementById('homeScreen').style.display = 'none';
+  document.getElementById('levelCompleteScreen').style.display = 'none';
+  document.getElementById('resultScreen').style.display = 'none';
+  document.getElementById('challengeBox').style.display = 'none';
+  document.getElementById('deathScreen').style.opacity = '0';
+  document.getElementById('deathScreen').style.background = 'rgba(127, 29, 29, 0)';
+  document.getElementById('deathScreen').style.transform = 'scale(1)';
+
+  if (resetStats) {
+    score = 0;
+    correctAnswers = 0;
+    document.getElementById('score').textContent = 0;
+    document.getElementById('correct').textContent = 0;
+    document.getElementById('progressFill').style.width = '0%';
+  }
+
+  syncHUD();
+}
+
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function renderQuestion(mode, zone) {
+  currentQuestion = vocab[Math.floor(Math.random() * vocab.length)];
+  document.getElementById('challengeBox').style.display = 'block';
+
+  if (mode === 'respawn') {
+    document.getElementById('question').innerHTML =
+      `<strong>Respawn Challenge</strong><br><br>${respawnChallengesLeft} more correct answers to respawn.<br><br>${currentQuestion.definition}`;
+  } else {
+    document.getElementById('question').innerHTML =
+      `<strong>Checkpoint Challenge!</strong><br><br>${currentQuestion.definition}`;
+  }
+
+  const answersDiv = document.getElementById('answers');
+  answersDiv.innerHTML = '';
+
+  const otherTerms = vocab
+    .map(v => v.term)
+    .filter(term => term !== currentQuestion.term);
+
+  shuffleArray(otherTerms);
+
+  const choices = [
+    currentQuestion.term,
+    otherTerms[0],
+    otherTerms[1],
+    otherTerms[2]
+  ];
+
+  shuffleArray(choices);
+
+  choices.forEach(choice => {
+    const btn = document.createElement('button');
+    btn.className = 'answer-btn';
+    btn.textContent = choice;
+
+    btn.onclick = () => {
+      if (choice === currentQuestion.term) {
+        score += 10;
+        correctAnswers++;
+        player.energy = Math.min(100, player.energy + 10);
+        playSound(540, .14, 'triangle');
+
+        syncHUD();
+
+        if (mode === 'respawn') {
+          respawnChallengesLeft--;
+          if (respawnChallengesLeft > 0) {
+            renderQuestion('respawn', null);
+            return;
+          }
+
+          respawnChallengeMode = false;
+          challengeMode = false;
+          document.getElementById('challengeBox').style.display = 'none';
+
+          player.x = respawnPoint.x;
+          player.y = respawnPoint.y;
+          player.dx = 0;
+          player.dy = 0;
+          player.energy = 80;
+          cameraX = Math.max(0, player.x - canvas.width * 0.25);
+          syncHUD();
+          return;
+        }
+
+        if (zone) {
+          zone.triggered = true;
+          zone.solved = true;
+          if (zone.respawn) {
+            respawnPoint = { x: zone.respawn.x, y: zone.respawn.y };
+          } else {
+            respawnPoint = { x: zone.x + 120, y: player.y };
+          }
+        }
+
+        challengeMode = false;
+        document.getElementById('challengeBox').style.display = 'none';
+        return;
+      } else {
+        score = Math.max(0, score - 5);
+        playSound(180, .12, 'sawtooth');
+        syncHUD();
+        renderQuestion(mode, zone);
+      }
+    };
+
+    answersDiv.appendChild(btn);
+  });
+}
+
+function showQuestion(zone = null) {
+  if (challengeMode || gameWon || deathAnimating || respawnChallengeMode || levelTransition) return;
+  if (zone && zone.solved) return;
+
+  challengeMode = true;
+  player.dx = 0;
+  player.dy = 0;
+  renderQuestion('zone', zone);
+}
+
+function spawnDeathParticles(x, y) {
+  deathParticles = [];
+  for (let i = 0; i < 42; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = Math.random() * 5 + 1.5;
+    deathParticles.push({
+      x,
+      y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 1,
+      life: 40 + Math.floor(Math.random() * 20),
+      size: Math.random() * 3 + 1
+    });
+  }
+}
+
+function spawnPortalBurst(cx, cy) {
+  portalParticles = [];
+  for (let i = 0; i < 120; i++) {
+    const angle = (Math.PI * 2 * i) / 120;
+    const speed = Math.random() * 6 + 3.5;
+    const lifeVariation = Math.random() * 30;
+    portalParticles.push({
+      x: cx,
+      y: cy,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life: 60 + lifeVariation,
+      maxLife: 60 + lifeVariation,
+      size: Math.random() * 4 + 2,
+      hue: Math.random() < 0.33 ? 'rgba(34,211,238,' :
+           Math.random() < 0.66 ? 'rgba(168,85,247,' : 'rgba(236,72,153,',
+      trail: []
+    });
+  }
+}
+
+function die() {
+  if (deathAnimating || respawnChallengeMode || gameWon || levelTransition) return;
+
+  playSound(120, .18, 'sawtooth');
+  deathAnimating = true;
+  challengeMode = true;
+  player.dx = 0;
+  player.dy = 0;
+  spawnDeathParticles(player.x + player.w / 2, player.y + player.h / 2);
+
+  const deathScreen = document.getElementById('deathScreen');
+  deathScreen.style.opacity = '1';
+  deathScreen.style.background = 'rgba(127, 29, 29, 0.52)';
+  deathScreen.style.transform = 'scale(1.03)';
+
+  document.getElementById('challengeBox').style.display = 'none';
+
+  setTimeout(() => {
+    deathAnimating = false;
+    deathScreen.style.opacity = '0';
+    deathScreen.style.background = 'rgba(127, 29, 29, 0)';
+    deathScreen.style.transform = 'scale(1)';
+
+    respawnChallengeMode = true;
+    challengeMode = true;
+    respawnChallengesLeft = 3;
+    renderQuestion('respawn', null);
+  }, 850);
+}
+
+function finishLevel() {
+  if (gameWon || levelTransition) return;
+  levelTransition = true;
+  challengeMode = true;
+  spawnPortalBurst(currentGoal.x + currentGoal.w / 2, currentGoal.y + currentGoal.h / 2);
+  playSound(523, .25, 'triangle');
+  setTimeout(() => playSound(659, .25, 'triangle'), 150);
+  setTimeout(() => playSound(784, .35, 'triangle'), 300);
+
+  setTimeout(() => {
+    unlockLevel(Math.min(currentLevel + 1, 4));
+
+    if (currentLevel < 4) {
+      document.getElementById('levelCompleteTitle').textContent = `Level ${currentLevel} Complete!`;
+      document.getElementById('levelCompleteText').textContent = `Great job. Level ${currentLevel + 1} is now unlocked.`;
+      document.getElementById('continueBtn').textContent = `Continue to Level ${currentLevel + 1}`;
+      document.getElementById('continueBtn').onclick = () => {
+        document.getElementById('levelCompleteScreen').style.display = 'none';
+        loadLevel(currentLevel + 1, false);
+      };
+      document.getElementById('levelCompleteScreen').style.display = 'flex';
+    } else {
+      gameWon = true;
+      document.getElementById('finalText').textContent =
+        `You completed all 4 levels and mastered ${correctAnswers} coding terms.`;
+      document.getElementById('resultScreen').style.display = 'flex';
+    }
+  }, 1100);
+}
+
+function restartGame() {
+  startNewGame();
+}
+
+function updateMovingPlatforms() {
+  currentPlatforms.forEach((p) => {
+    if (p.movingY) {
+      p.y = p.baseY + Math.sin(frameCount * p.speed) * p.amp;
+    }
+  });
+
+  currentSpikes.forEach((s) => {
+    if (s.platformIndex !== undefined && currentPlatforms[s.platformIndex]) {
+      s.y = currentPlatforms[s.platformIndex].y;
+    }
+  });
+}
+
+function drawSpike(spike) {
+  ctx.save();
+
+  ctx.beginPath();
+  ctx.moveTo(spike.x, spike.y);
+  ctx.lineTo(spike.x + spike.w * 0.5, spike.y - spike.h);
+  ctx.lineTo(spike.x + spike.w, spike.y);
+  ctx.closePath();
+
+  const grad = ctx.createLinearGradient(spike.x, spike.y - spike.h, spike.x, spike.y);
+  grad.addColorStop(0, '#ef4444');
+  grad.addColorStop(1, '#7f1d1d');
+
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  ctx.strokeStyle = '#fecaca';
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+
+  ctx.clip();
+
+  const sweep = ((frameCount * 2) + spike.x) % (spike.w * 4);
+  const shineX = spike.x - spike.w + sweep;
+
+  const shineGrad = ctx.createLinearGradient(
+    shineX,
+    spike.y - spike.h,
+    shineX + spike.w * 0.45,
+    spike.y
+  );
+
+  shineGrad.addColorStop(0, 'rgba(255,255,255,0)');
+  shineGrad.addColorStop(0.5, 'rgba(255,255,255,0.42)');
+  shineGrad.addColorStop(1, 'rgba(255,255,255,0)');
+
+  ctx.fillStyle = shineGrad;
+  ctx.fillRect(spike.x, spike.y - spike.h, spike.w, spike.h);
+
+  ctx.restore();
+}
+
+function drawPortal() {
+  const cx = currentGoal.x + currentGoal.w / 2;
+  const cy = currentGoal.y + currentGoal.h / 2;
+  const pulse = 1 + Math.sin(frameCount * 0.12) * 0.08 + (levelTransition ? Math.min(winAnimationFrame / 60, 1) * 0.15 : 0);
+  const innerPulse = 1 + Math.sin(frameCount * 0.18) * 0.12;
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(pulse, pulse);
+
+  // Outer glow with enhanced gradient
+  const outerGlow = ctx.createRadialGradient(0, 0, 0, 0, 0, 85);
+  outerGlow.addColorStop(0, 'rgba(255,255,255,0.98)');
+  outerGlow.addColorStop(0.12, 'rgba(34,211,238,0.95)');
+  outerGlow.addColorStop(0.25, 'rgba(168,85,247,0.85)');
+  outerGlow.addColorStop(0.45, 'rgba(59,130,246,0.65)');
+  outerGlow.addColorStop(0.65, 'rgba(236,72,153,0.35)');
+  outerGlow.addColorStop(1, 'rgba(59,130,246,0)');
+  ctx.fillStyle = outerGlow;
+  ctx.beginPath();
+  ctx.arc(0, 0, 75, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Middle ring with pulsing effect
+  ctx.lineWidth = 8;
+  ctx.strokeStyle = 'rgba(224,242,254,0.95)';
+  ctx.beginPath();
+  ctx.arc(0, 0, 38, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Inner rotating rings
+  for (let i = 0; i < 4; i++) {
+    const a = frameCount * 0.025 + i * 1.57; // 90 degrees apart
+    const r = 28 + i * 4;
+    const arcLength = 1.2 + Math.sin(frameCount * 0.08 + i) * 0.3;
+    ctx.strokeStyle = i === 0 ? 'rgba(34,211,238,0.9)' :
+                     i === 1 ? 'rgba(168,85,247,0.85)' :
+                     i === 2 ? 'rgba(236,72,153,0.8)' : 'rgba(56,189,248,0.75)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(0, 0, r, a, a + arcLength);
+    ctx.stroke();
+  }
+
+  // Enhanced orbiting particles
+  for (let i = 0; i < 12; i++) {
+    const a = frameCount * 0.04 + i * (Math.PI * 2 / 12);
+    const r = 45 + Math.sin(frameCount * 0.06 + i * 0.5) * 6;
+    const px = Math.cos(a) * r;
+    const py = Math.sin(a) * r;
+    const particleSize = 2.5 + Math.sin(frameCount * 0.1 + i) * 0.8;
+
+    // Particle glow
+    const particleGlow = ctx.createRadialGradient(px, py, 0, px, py, particleSize * 3);
+    particleGlow.addColorStop(0, 'rgba(255,255,255,0.95)');
+    particleGlow.addColorStop(0.6, 'rgba(34,211,238,0.7)');
+    particleGlow.addColorStop(1, 'rgba(34,211,238,0)');
+    ctx.fillStyle = particleGlow;
+    ctx.beginPath();
+    ctx.arc(px, py, particleSize * 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Particle core
+    ctx.fillStyle = 'rgba(255,255,255,0.95)';
+    ctx.beginPath();
+    ctx.arc(px, py, particleSize, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Inner core with enhanced pulsing
+  ctx.save();
+  ctx.scale(innerPulse, innerPulse);
+  const coreGlow = ctx.createRadialGradient(0, 0, 0, 0, 0, 25);
+  coreGlow.addColorStop(0, 'rgba(255,255,255,0.9)');
+  coreGlow.addColorStop(0.4, 'rgba(168,85,247,0.8)');
+  coreGlow.addColorStop(0.8, 'rgba(15,23,42,0.6)');
+  coreGlow.addColorStop(1, 'rgba(15,23,42,0.9)');
+  ctx.fillStyle = coreGlow;
+  ctx.beginPath();
+  ctx.arc(0, 0, 20 + Math.sin(frameCount * 0.15) * 3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // Energy streams
+  for (let i = 0; i < 6; i++) {
+    const a = frameCount * 0.02 + i * 1.047; // 60 degrees apart
+    const startR = 20;
+    const endR = 55 + Math.sin(frameCount * 0.07 + i) * 8;
+    const startX = Math.cos(a) * startR;
+    const startY = Math.sin(a) * startR;
+    const endX = Math.cos(a) * endR;
+    const endY = Math.sin(a) * endR;
+
+    ctx.strokeStyle = `rgba(34,211,238,${0.6 + Math.sin(frameCount * 0.1 + i) * 0.2})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(startX, startY);
+    ctx.lineTo(endX, endY);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+function drawDeathParticles() {
+  ctx.save();
+  ctx.translate(-cameraX, 0);
+  deathParticles = deathParticles.filter(p => p.life > 0);
+
+  deathParticles.forEach(p => {
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.08;
+    p.life--;
+
+    ctx.fillStyle = `rgba(248,113,113,${Math.max(0, p.life / 60)})`;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  ctx.restore();
+}
+
+function drawPortalParticles() {
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+
+  portalParticles = portalParticles.filter(p => p.life > 0);
+
+  portalParticles.forEach(p => {
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vx *= 0.985;
+    p.vy *= 0.985;
+    p.vy += 0.02; // Slight gravity
+    p.life--;
+
+    // Add trail effect
+    p.trail.push({x: p.x, y: p.y, life: p.life});
+    if (p.trail.length > 8) p.trail.shift();
+
+    // Draw trail
+    p.trail.forEach((point, index) => {
+      const alpha = (point.life / p.maxLife) * 0.6 * (index / p.trail.length);
+      const size = p.size * (point.life / p.maxLife) * (index / p.trail.length);
+      ctx.fillStyle = `${p.hue}${alpha})`;
+      ctx.beginPath();
+      ctx.arc(point.x - cameraX, point.y, size, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // Draw main particle with glow
+    const alpha = Math.max(0, p.life / p.maxLife);
+    const glowSize = p.size * 3;
+
+    // Particle glow
+    const glowGrad = ctx.createRadialGradient(
+      p.x - cameraX, p.y, 0,
+      p.x - cameraX, p.y, glowSize
+    );
+    glowGrad.addColorStop(0, `${p.hue}${alpha})`);
+    glowGrad.addColorStop(0.7, `${p.hue}${alpha * 0.3})`);
+    glowGrad.addColorStop(1, `${p.hue}0)`);
+
+    ctx.fillStyle = glowGrad;
+    ctx.beginPath();
+    ctx.arc(p.x - cameraX, p.y, glowSize, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Particle core
+    ctx.fillStyle = `${p.hue}${alpha})`;
+    ctx.beginPath();
+    ctx.arc(p.x - cameraX, p.y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  ctx.restore();
+}
+
+function drawWorld() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  grad.addColorStop(0, '#020617');
+  grad.addColorStop(1, '#0f172a');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  frameCount++;
+  if (levelTransition) winAnimationFrame++;
+
+  ctx.save();
+  bgStars.forEach(s => {
+    const twinkle = Math.sin(frameCount * s.twinkleSpeed + s.phase) * 0.16;
+    const alpha = Math.max(0.05, Math.min(1, s.baseOpacity + twinkle));
+    const x = s.x - cameraX * 0.12;
+    const y = s.y;
+
+    ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+    ctx.beginPath();
+    ctx.arc(x, y, s.size, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.restore();
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+
+  bgComets.forEach(c => {
+    const headX = c.x - cameraX * 0.10;
+    const headY = c.y;
+
+    for (let i = 0; i < c.trail; i++) {
+      const t = i / c.trail;
+      const px = headX - c.vx * t * 10;
+      const py = headY - c.vy * t * 10;
+      const alpha = (1 - t) * 0.24;
+      const size = Math.max(0.4, c.size * (1 - t * 0.75));
+
+      ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+      ctx.beginPath();
+      ctx.arc(px, py, size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    const glow = ctx.createRadialGradient(headX, headY, 0, headX, headY, c.size * 7);
+    glow.addColorStop(0, 'rgba(255,255,255,.95)');
+    glow.addColorStop(0.3, 'rgba(125,211,252,.65)');
+    glow.addColorStop(1, 'rgba(125,211,252,0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(headX, headY, c.size * 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    c.x += c.vx * 3.2;
+    c.y += c.vy * 1.4;
+
+    if (c.x > canvas.width * 3 || c.y > canvas.height + 120) {
+      c.x = -200;
+      c.y = Math.random() * canvas.height * 0.7;
+      c.vx = Math.random() * 3.5 + 2;
+      c.vy = Math.random() * 1.8 + 0.8;
+      c.size = Math.random() * 2 + 1.5;
+      c.trail = Math.floor(Math.random() * 16) + 12;
+    }
+  });
+
+  ctx.restore();
+
+  ctx.save();
+  ctx.translate(-cameraX, 0);
+
+  currentPlatforms.forEach(p => {
+    ctx.fillStyle = '#334155';
+    ctx.fillRect(p.x, p.y, p.w, p.h);
+  });
+
+  currentSpikes.forEach(drawSpike);
+
+  drawPortal();
+
+  ctx.fillStyle = '#38bdf8';
+  ctx.fillRect(player.x, player.y, player.w, player.h);
+
+  ctx.restore();
+
+  drawDeathParticles();
+  drawPortalParticles();
+
+  ctx.fillStyle = 'white';
+  ctx.font = '18px Arial';
+  ctx.fillText('Score: ' + score, 18, 28);
+  ctx.fillText('Correct: ' + correctAnswers, 18, 52);
+  ctx.fillText('Energy: ' + Math.floor(player.energy), 18, 76);
+  document.getElementById('energy').textContent = Math.floor(player.energy);
+}
+
+function updatePlayer() {
+  updateMovingPlatforms();
+
+  if (!started || challengeMode || gameWon || deathAnimating || levelTransition) return;
+
+  if (keys['ArrowRight'] && player.energy > 0) {
+    player.dx = player.speed;
+    player.energy -= 0.08;
+  } else if (keys['ArrowLeft'] && player.energy > 0) {
+    player.dx = -player.speed;
+    player.energy -= 0.08;
+  } else {
+    player.dx *= 0.8;
+  }
+
+  if ((keys['ArrowUp'] || keys[' ']) && player.grounded && player.energy > 5) {
+    player.dy = player.jump;
+    player.grounded = false;
+    player.energy -= 5;
+  }
+
+  player.dy += gravity;
+  player.x += player.dx;
+  player.y += player.dy;
+
+  player.grounded = false;
+
+  currentPlatforms.forEach(p => {
+    if (
+      player.x + player.w > p.x &&
+      player.x < p.x + p.w &&
+      player.y + player.h > p.y &&
+      player.y + player.h < p.y + p.h + 15 &&
+      player.dy >= 0
+    ) {
+      player.y = p.y - player.h;
+      player.dy = 0;
+      player.grounded = true;
+    }
+  });
+
+  if (player.energy < 100 && player.grounded) {
+    player.energy += 0.05;
+  }
+
+  currentZones.forEach(zone => {
+    if (!zone.solved && !challengeMode && player.x + player.w > zone.x && player.x < zone.x + 26) {
+      showQuestion(zone);
+    }
+  });
+
+  currentSpikes.forEach(spike => {
+    const hitLeft = spike.x + 8;
+    const hitRight = spike.x + spike.w - 8;
+    const hitTop = spike.y - spike.h + 5;
+    const hitBottom = spike.y - 2;
+
+    if (
+      player.x + player.w > hitLeft &&
+      player.x < hitRight &&
+      player.y + player.h > hitTop &&
+      player.y < hitBottom
+    ) {
+      die();
+    }
+  });
+
+  if (player.y > canvas.height + 180) {
+    die();
+  }
+
+  if (player.x > currentGoal.x) {
+    finishLevel();
+  }
+
+  cameraX = Math.max(0, player.x - canvas.width * 0.25);
+}
+
+function gameLoop() {
+  updatePlayer();
+  drawWorld();
+  requestAnimationFrame(gameLoop);
+}
+gameLoop();
+
+loadSavedProgress();
+renderHomeMenu();
+loadLevel(1, true);
+started = false;
+showHomeScreen();
+syncHUD();
+</script>
+</body>
+</html>
